@@ -61,6 +61,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "aes_emulation.h"
+#include "clmul_emulator.h"
 
 #if !defined (ALIGN16)
 #if defined (__GNUC__)
@@ -143,13 +144,7 @@ void AES_128_Encrypt(uint32_t* out, uint32_t* in, uint32_t* ks)
         ks+=4;
     }
     out[0]=s0;out[1]=s1;out[2]=s2;out[3]=s3;
-    emulated_aesenc_row_shifting(out);
-	emulated_aesenc_substitute_bytes(out);
-  
-    out[0] ^= ks[0];
-    out[1] ^= ks[1];
-    out[2] ^= ks[2];
-    out[3] ^= ks[3];
+    emulated_aesenclast(out,ks);
 }
 
 void AES_128_CTR(uint8_t* out, uint8_t* in, uint32_t* CTR, int mlen, uint32_t* ks)
@@ -298,7 +293,7 @@ void GCM_SIV_ENC_2_Keys(uint8_t* CT, uint8_t TAG[16], uint8_t K1[16], uint8_t N[
 	POLYVAL(LENBLK, (uint64_t*)HASH_KEY, 16, POLYV);
 	#ifdef XOR_WITH_NONCE
 	((uint64_t*)POLYV)[0] ^= ((uint64_t*)N)[0];
-	((uint64_t*)POLYV)[1] ^= ((uint64_t*)N)[1];
+	((uint64_t*)POLYV)[1] ^= ((uint32_t*)N)[2];
 	#endif
 	((uint8_t*)POLYV)[15] &= 127;
 	
@@ -377,7 +372,7 @@ int GCM_SIV_DEC_2_Keys(uint8_t* MSG, uint8_t TAG[16], uint8_t K1[16], uint8_t N[
 	new_TAG[1] = T[1];
 	#ifdef XOR_WITH_NONCE
 	((uint64_t*)new_TAG)[0] ^= ((uint64_t*)N)[0];
-	((uint64_t*)new_TAG)[1] ^= ((uint64_t*)N)[1];
+	((uint64_t*)new_TAG)[1] ^= ((uint32_t*)N)[2];
 	#endif
 	((uint8_t*)new_TAG)[15] &= 127;
 	AES_128_Encrypt((uint32_t*)new_TAG, (uint32_t*)new_TAG, (uint32_t*)KS); 
