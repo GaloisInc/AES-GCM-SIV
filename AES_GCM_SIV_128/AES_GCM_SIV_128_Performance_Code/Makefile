@@ -1,9 +1,10 @@
-GCC = /usr/intel/pkgs/gcc/5.2.0/bin/gcc -mpclmul -O3 -maes  -mavx -w
+GCC = gcc -mpclmul -O3 -maes  -mavx -w
 ICC = icc
 FLAGS = -DRDTSC
 DEF= -DDETAILS -DADD_INFO
 #DEF= -DCOUNT
 FLAGS += -Wa,-q
+FLAGS += -no-pie -fno-stack-protector
 
 ALL:  GHASH 
 	

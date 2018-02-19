@@ -110,40 +110,18 @@ void AES_128_Key_Expansion(const unsigned char *userkey, uint32_t* ks)
 void AES_128_Encrypt(uint32_t* out, uint32_t* in, uint32_t* ks)
 {
     int i, j;
-    uint32_t s0, s1, s2, s3;
-    uint32_t t0, t1, t2, t3;
-    
-    s0 = in[0]^ks[0];
-    s1 = in[1]^ks[1];
-    s2 = in[2]^ks[2];
-    s3 = in[3]^ks[3];
+
+    out[0] = in[0]^ks[0];
+    out[1] = in[1]^ks[1];
+    out[2] = in[2]^ks[2];
+    out[3] = in[3]^ks[3];
     ks+=4;
-    
+
     for(i=0; i<9; i++)
     {
-        t0 = emulated_aesenc_enc_table_0[s0 & 0xff] ^ 
-             emulated_aesenc_enc_table_1[(s1 >> 8) & 0xff] ^ 
-             emulated_aesenc_enc_table_2[(s2 >> 16) & 0xff] ^ 
-             emulated_aesenc_enc_table_3[(s3 >> 24) & 0xff];
-        t1 = emulated_aesenc_enc_table_0[s1 & 0xff] ^ 
-             emulated_aesenc_enc_table_1[(s2 >> 8) & 0xff] ^ 
-             emulated_aesenc_enc_table_2[(s3 >> 16) & 0xff] ^ 
-             emulated_aesenc_enc_table_3[(s0 >> 24) & 0xff];	
-        t2 = emulated_aesenc_enc_table_0[s2 & 0xff] ^ 
-             emulated_aesenc_enc_table_1[(s3 >> 8) & 0xff] ^ 
-             emulated_aesenc_enc_table_2[(s0 >> 16) & 0xff] ^ 
-             emulated_aesenc_enc_table_3[(s1 >> 24) & 0xff] ;
-        t3 = emulated_aesenc_enc_table_0[s3 & 0xff] ^ 
-             emulated_aesenc_enc_table_1[(s0 >> 8) & 0xff] ^ 
-             emulated_aesenc_enc_table_2[(s1 >> 16) & 0xff] ^ 
-             emulated_aesenc_enc_table_3[(s2 >> 24) & 0xff];
-        s0 = t0^ks[0];
-        s1 = t1^ks[1];
-        s2 = t2^ks[2];
-        s3 = t3^ks[3];
+        emulated_aesenc(out,ks);
         ks+=4;
     }
-    out[0]=s0;out[1]=s1;out[2]=s2;out[3]=s3;
     emulated_aesenclast(out,ks);
 }
 
@@ -163,7 +141,7 @@ void AES_128_CTR(uint8_t* out, uint8_t* in, uint32_t* CTR, int mlen, uint32_t* k
         P+=4;
         C+=4;
         // CTR[3] = bswap_32(bswap_32(CTR[3]) + 1);
-		CTR[0] = ((CTR[0] +1) % (0xFFFFFFFF));
+		CTR[0] = CTR[0] + 1; // ((CTR[0] +1) % (0xFFFFFFFF));
     }
     if(i*16 < mlen)
     {
@@ -251,7 +229,7 @@ void POLYVAL(uint64_t* input, uint64_t* H, uint64_t len, uint64_t* result)
 }
 
 
-void GCM_SIV_ENC_2_Keys(uint8_t* CT, uint8_t TAG[16], uint8_t K1[16], uint8_t N[16], uint8_t* AAD, uint8_t* MSG,
+void GCM_SIV_ENC_2_Keys(uint8_t* CT, uint8_t TAG[16], uint8_t K1[16], uint8_t N[12], uint8_t* AAD, uint8_t* MSG, 
 						uint64_t AAD_len, uint64_t MSG_len)
 {
 	uint64_t POLYV[2] = {0};
@@ -317,7 +295,7 @@ void GCM_SIV_ENC_2_Keys(uint8_t* CT, uint8_t TAG[16], uint8_t K1[16], uint8_t N[
 }
 
 
-int GCM_SIV_DEC_2_Keys(uint8_t* MSG, uint8_t TAG[16], uint8_t K1[16], uint8_t N[16], uint8_t* AAD, uint8_t* CT,
+int GCM_SIV_DEC_2_Keys(uint8_t* MSG, uint8_t TAG[16], uint8_t K1[16], uint8_t N[12], uint8_t* AAD, uint8_t* CT, 
 						uint64_t AAD_len, uint64_t MSG_len)
 {
 	uint64_t T[2] = {0};
